@@ -28,7 +28,7 @@ const postResolver = {
 
         // use one query get all post and inside post comment length && like length
         const postResult = await pool.query(
-          "SELECT * FROM posts LEFT JOIN (SELECT post_id, COUNT(post_id) AS cl FROM comments GROUP BY post_id) comments ON posts.id=comments.post_id LEFT JOIN (SELECT post_id, COUNT(post_id) AS ll FROM likes GROUP BY post_id) likes ON posts.id=likes.post_id;"
+          "SELECT * FROM posts LEFT JOIN (SELECT post_id, COUNT(post_id) AS commentslength FROM comments GROUP BY post_id) comments ON posts.id=comments.post_id LEFT JOIN (SELECT post_id, COUNT(post_id) AS likeslength FROM likes GROUP BY post_id) likes ON posts.id=likes.post_id;"
         );
 
         return postResult.rows;
@@ -41,10 +41,19 @@ const postResolver = {
     post: async (_, args) => {
       const { id } = args;
       try {
-        const result = await pool.query("SELECT * FROM posts WHERE id=$1", [
-          id,
-        ]);
-        return result.rows[0];
+        const result = await pool.query(
+          "SELECT * FROM posts LEFT JOIN (SELECT post_id, COUNT(post_id) AS commentslength FROM comments GROUP BY post_id) comments ON posts.id=comments.post_id LEFT JOIN (SELECT post_id, COUNT(post_id) AS likeslength FROM likes GROUP BY post_id) likes ON posts.id=likes.post_id WHERE id=$1",
+          [id]
+        );
+        const postComment = await pool.query(
+          "SELECT * FROM comments WHERE post_id=$1",
+          [id]
+        );
+        console.log(postComment.rows);
+        return {
+          ...result.rows[0],
+          comments: postComment.rows,
+        };
       } catch (error) {
         console.log(error);
         throw new Error(error);

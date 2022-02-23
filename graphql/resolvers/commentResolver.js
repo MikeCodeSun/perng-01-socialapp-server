@@ -15,11 +15,12 @@ const commentResolver = {
         });
       }
       //check post with postid  exists
-      const postResulct = await pool.query("SELECT * FROM posts WHERE id=$1", [
-        postId,
-      ]);
+      const postResult = await pool.query(
+        "SELECT * FROM posts LEFT JOIN (SELECT post_id, COUNT(post_id) AS commentslength FROM comments GROUP BY post_id) comments ON posts.id=comments.post_id LEFT JOIN (SELECT post_id, COUNT(post_id) AS likeslength FROM likes GROUP BY post_id) likes ON posts.id=likes.post_id WHERE id=$1",
+        [postId]
+      );
 
-      if (postResulct.rows.length === 0) {
+      if (postResult.rows.length === 0) {
         throw new UserInputError("Error", {
           error: { post: "Post not exist" },
         });
@@ -29,8 +30,16 @@ const commentResolver = {
         "INSERT INTO comments(body, creator_id, creator, post_id) VALUES($1, $2, $3, $4) RETURNING *",
         [body, userId, userName, postId]
       );
-      console.log(commentResult.rows);
-      return commentResult.rows[0];
+      //new post
+      const newCommentResult = await pool.query(
+        "SELECT * FROM comments WHERE post_id=$1",
+        [postId]
+      );
+      return {
+        ...postResult.rows[0],
+        comments: newCommentResult.rows,
+        commentslength: newCommentResult.rows.length,
+      };
     },
     // delete comment
     deleteComment: async (_, args, context) => {
@@ -39,9 +48,10 @@ const commentResolver = {
       const { id: userId } = user;
       // console.log(user, postId);
       //check post exist?
-      const postResult = await pool.query("SELECT * FROM posts WHERE id=$1", [
-        postId,
-      ]);
+      const postResult = await pool.query(
+        "SELECT * FROM posts LEFT JOIN (SELECT post_id, COUNT(post_id) AS commentslength FROM comments GROUP BY post_id) comments ON posts.id=comments.post_id LEFT JOIN (SELECT post_id, COUNT(post_id) AS likeslength FROM likes GROUP BY post_id) likes ON posts.id=likes.post_id WHERE id=$1",
+        [postId]
+      );
       if (postResult.rows.length === 0) {
         throw new UserInputError("Error", {
           error: { post: "post not exist" },
@@ -78,7 +88,16 @@ const commentResolver = {
         [commentId]
       );
 
-      return deleteComment.rows[0];
+      const newCommentResult = await pool.query(
+        "SELECT * FROM comments WHERE post_id=$1",
+        [postId]
+      );
+
+      return {
+        ...postResult.rows[0],
+        comments: newCommentResult.rows,
+        commentslength: newCommentResult.rows.length,
+      };
     },
     // like toggle
     likeToggle: async (_, args, context) => {
@@ -86,9 +105,10 @@ const commentResolver = {
       const { id: postId } = args;
       const { id: userId } = user;
       //check post exist?
-      const postResult = await pool.query("SELECT * FROM posts WHERE id=$1", [
-        postId,
-      ]);
+      const postResult = await pool.query(
+        "SELECT * FROM posts LEFT JOIN (SELECT post_id, COUNT(post_id) AS commentslength FROM comments GROUP BY post_id) comments ON posts.id=comments.post_id LEFT JOIN (SELECT post_id, COUNT(post_id) AS likeslength FROM likes GROUP BY post_id) likes ON posts.id=likes.post_id WHERE id=$1",
+        [postId]
+      );
       if (postResult.rows.length === 0) {
         throw new UserInputError("Error", {
           error: { post: "post not exist" },
@@ -101,7 +121,7 @@ const commentResolver = {
         [postId, userId]
       );
 
-      console.log(likeResult.rows);
+      // console.log(likeResult.rows);
       //toggle like,  no like add like, have like remove like
       let like;
       if (likeResult.rows.length === 0) {
@@ -118,7 +138,18 @@ const commentResolver = {
         );
       }
 
-      return like.rows[0];
+      const newLikes = await pool.query(
+        "SELECT * FROM likes WHERE post_id=$1",
+        [postId]
+      );
+
+      console.log(newLikes.rows);
+
+      return {
+        ...postResult.rows[0],
+        likes: newLikes.rows,
+        likesLength: newLikes.rows.length,
+      };
     },
   },
 };

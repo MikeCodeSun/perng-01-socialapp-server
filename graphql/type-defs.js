@@ -16,12 +16,12 @@ const typeDefs = gql`
     creator_id: Int!
     creator: String!
     created_at: String!
-    comments: [Comment]!
-    likes: [Like]!
+    comments: [Comment]
+    likes: [Like]
     commentsCount: Int!
     likesCount: Int!
-    cl: Int
-    ll: Int
+    commentslength: Int
+    likeslength: Int
   }
   type Comment {
     id: ID!
@@ -65,9 +65,9 @@ const typeDefs = gql`
     createPost(body: String!): Post!
     deletePost(id: ID!): Post!
     updatePost(id: ID!, body: String!): Post!
-    createComment(postId: ID!, body: String!): Comment!
-    deleteComment(postId: ID!, commentId: ID!): Comment!
-    likeToggle(id: ID!): Like!
+    createComment(postId: ID!, body: String!): Post!
+    deleteComment(postId: ID!, commentId: ID!): Post!
+    likeToggle(id: ID!): Post!
   }
 `;
 
