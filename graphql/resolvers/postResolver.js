@@ -6,26 +6,32 @@ const postResolver = {
     // get all posts
     posts: async () => {
       try {
+        // 3 query to get posts
         // get all posts
-        const result = await pool.query("SELECT * FROM posts");
+        // const result = await pool.query("SELECT * FROM posts");
         //get all comments
-        const commentsResult = await pool.query("SELECT * FROM comments");
+        // const commentsResult = await pool.query("SELECT * FROM comments");
+        //get all like
+        // const likesResult = await pool.query("SELECT * FROM likes");
+        // add comment like to post post.id = x.post_id
+        // const posts = result.rows.map((post) => {
+        //   const comments = commentsResult.rows.filter(
+        //     (comment) => comment.post_id === post.id
+        //   );
+        //   const likes = likesResult.rows.filter(
+        //     (like) => like.post_id === post.id
+        //   );
+        //   // console.log(likes, comments);
 
-        // console.log(commentsResult.rows);
-        // add comment to post post.id = comment.post_id
-        const posts = result.rows.map((post) => {
-          if (commentsResult.rows.length > 0) {
-            const comments = commentsResult.rows.filter(
-              (comment) => comment.post_id === post.id
-            );
-            console.log(comments);
-            return { ...post, comments };
-          }
-          return posts;
-        });
+        //   return { ...post, likes, comments };
+        // });
 
-        console.log(posts);
-        return posts;
+        // use one query get all post and inside post comment length && like length
+        const postResult = await pool.query(
+          "SELECT * FROM posts LEFT JOIN (SELECT post_id, COUNT(post_id) AS cl FROM comments GROUP BY post_id) comments ON posts.id=comments.post_id LEFT JOIN (SELECT post_id, COUNT(post_id) AS ll FROM likes GROUP BY post_id) likes ON posts.id=likes.post_id;"
+        );
+
+        return postResult.rows;
       } catch (error) {
         console.log(error);
         throw new Error(error);

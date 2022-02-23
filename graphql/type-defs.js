@@ -20,6 +20,8 @@ const typeDefs = gql`
     likes: [Like]!
     commentsCount: Int!
     likesCount: Int!
+    cl: Int
+    ll: Int
   }
   type Comment {
     id: ID!
